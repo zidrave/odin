@@ -199,6 +199,8 @@ def editor(stdscr, archivo_inicial=None):
                     mostrar_mensaje = f"Archivo guardado en {archivo}"
                     mostrar_mensaje_color = curses.color_pair(6)
                     mostrar_mensaje_tiempo = time.time()
+                elif comando_input == 'l':
+                    mostrar_lineas = not mostrar_lineas
                 elif comando_input.startswith('wf:'):
                     nuevo_nombre = comando_input[3:].strip()
                     if nuevo_nombre:
@@ -222,9 +224,9 @@ def editor(stdscr, archivo_inicial=None):
                         if sy == ey:
                             portapapeles = lineas[sy][sx:ex]
                         else:
-                            portapapeles = '\n'.join(
-                                [lineas[sy][sx:]] + lineas[sy + 1:ey] + [lineas[ey][:ex]]
-                            )
+                            portapapeles = '\n'.join([
+                                lineas[sy][sx:]
+                            ] + lineas[sy + 1:ey] + [lineas[ey][:ex]])
                         mostrar_mensaje = "Texto copiado"
                         mostrar_mensaje_color = curses.color_pair(6)
                         mostrar_mensaje_tiempo = time.time()
@@ -238,9 +240,9 @@ def editor(stdscr, archivo_inicial=None):
                             portapapeles = lineas[sy][sx:ex]
                             lineas[sy] = lineas[sy][:sx] + lineas[sy][ex:]
                         else:
-                            portapapeles = '\n'.join(
-                                [lineas[sy][sx:]] + lineas[sy + 1:ey] + [lineas[ey][:ex]]
-                            )
+                            portapapeles = '\n'.join([
+                                lineas[sy][sx:]
+                            ] + lineas[sy + 1:ey] + [lineas[ey][:ex]])
                             lineas[sy] = lineas[sy][:sx] + lineas[ey][ex:]
                             del lineas[sy + 1:ey + 1]
                         seleccionando = False
