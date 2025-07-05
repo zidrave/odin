@@ -1,4 +1,4 @@
-import curses
+""import curses
 import sys
 import os
 import time
@@ -13,7 +13,34 @@ def pedir_nombre_archivo(stdscr):
     curses.echo()
     stdscr.addstr(curses.LINES - 1, 0, "Nombre del archivo para guardar: ")
     stdscr.clrtoeol()
-    nombre = stdscr.getstr().decode()
+    nombre = ''
+    pos = 0
+    while True:
+        key = stdscr.getch()
+        if key in (10, 13):  # Enter
+            break
+        elif key in (8, 127, curses.KEY_BACKSPACE):
+            if pos > 0:
+                nombre = nombre[:pos-1] + nombre[pos:]
+                pos -= 1
+        elif key == curses.KEY_LEFT:
+            if pos > 0:
+                pos -= 1
+        elif key == curses.KEY_RIGHT:
+            if pos < len(nombre):
+                pos += 1
+        elif 32 <= key <= 126:
+            nombre = nombre[:pos] + chr(key) + nombre[pos:]
+            pos += 1
+
+        maxw = curses.COLS - 35
+        start = max(0, pos - maxw + 1)
+        visible = nombre[start:start + maxw]
+
+        stdscr.addstr(curses.LINES - 1, 34, ' ' * maxw)
+        stdscr.addstr(curses.LINES - 1, 34, visible)
+        stdscr.move(curses.LINES - 1, 34 + min(pos - start, maxw - 1))
+
     curses.noecho()
     return nombre
 
@@ -109,12 +136,12 @@ def editor(stdscr, archivo_inicial=None):
 
         if mostrar_mensaje and time.time() - mostrar_mensaje_tiempo < 1.5:
             stdscr.attron(mostrar_mensaje_color)
-            stdscr.addstr(h - 1, 0, mostrar_mensaje)
+            stdscr.addstr(h - 1, 0, mostrar_mensaje[:w-1])
             stdscr.clrtoeol()
             stdscr.attroff(mostrar_mensaje_color)
         elif modo_comando:
             stdscr.attron(curses.color_pair(3))
-            stdscr.addstr(h - 1, 0, f":{comando}")
+            stdscr.addstr(h - 1, 0, f":{comando}"[:w-1])
             stdscr.clrtoeol()
             stdscr.attroff(curses.color_pair(3))
         else:
@@ -142,6 +169,9 @@ def editor(stdscr, archivo_inicial=None):
                 else:
                     seleccionando = False
                 continue
+            elif siguiente == ord('a'):
+                scroll_x = max(0, cursor_x - (w - (4 if mostrar_lineas else 0)) // 2)
+                continue
             elif siguiente == ord('s'):
                 if not archivo:
                     archivo = pedir_nombre_archivo(stdscr)
@@ -152,11 +182,9 @@ def editor(stdscr, archivo_inicial=None):
                 continue
             elif siguiente == ord('q'):
                 break
-            elif siguiente == curses.KEY_RIGHT:
-                scroll_x += 1
-                continue
-            elif siguiente == curses.KEY_LEFT:
-                scroll_x = max(0, scroll_x - 1)
+            elif siguiente == ord('c'):
+                modo_comando = not modo_comando
+                comando = ''
                 continue
             else:
                 key = siguiente
@@ -171,6 +199,13 @@ def editor(stdscr, archivo_inicial=None):
                     mostrar_mensaje = f"Archivo guardado en {archivo}"
                     mostrar_mensaje_color = curses.color_pair(6)
                     mostrar_mensaje_tiempo = time.time()
+                elif comando_input.startswith('wf:'):
+                    nuevo_nombre = comando_input[3:].strip()
+                    if nuevo_nombre:
+                        guardar_archivo(lineas, nuevo_nombre)
+                        mostrar_mensaje = f"Copia guardada como {nuevo_nombre}"
+                        mostrar_mensaje_color = curses.color_pair(6)
+                        mostrar_mensaje_tiempo = time.time()
                 elif comando_input == 'q':
                     break
                 elif comando_input == 'wq':
@@ -178,8 +213,6 @@ def editor(stdscr, archivo_inicial=None):
                         archivo = pedir_nombre_archivo(stdscr)
                     guardar_archivo(lineas, archivo)
                     break
-                elif comando_input == 'l':
-                    mostrar_lineas = not mostrar_lineas
                 elif comando_input == 'copy':
                     if seleccionando and sel_inicio and sel_fin:
                         sy, sx = sel_inicio
