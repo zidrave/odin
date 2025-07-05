@@ -1,4 +1,4 @@
-""import curses
+import curses
 import sys
 import os
 import time
@@ -11,7 +11,7 @@ def guardar_archivo(lineas, nombre):
 
 def pedir_nombre_archivo(stdscr):
     curses.echo()
-    stdscr.addstr(curses.LINES - 1, 0, "Nombre del archivo para guardar: ")
+    stdscr.addstr(curses.LINES - 1, 0, "filename to save: ")
     stdscr.clrtoeol()
     nombre = ''
     pos = 0
