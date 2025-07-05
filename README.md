@@ -2,7 +2,7 @@
 
 **Editor de texto para Linux** inspirado en la simplicidad de `nano` y la potencia de `vi/vim`, desarrollado en Python 3.
 
-![Odin Demo](https://via.placeholder.com/800x400?text=Odin+Editor+Demo) *(Reemplaza con un GIF real luego)*
+ 
 
 ## 🚀 Características
 - **Modo comando** estilo Vim.
@@ -35,7 +35,4 @@
 | `:cortar`   | Cortar texto.                   |
 
 ## 📥 Instalación
-1. Clona el repositorio:
-   ```bash
-   git clone https://github.com/tuusuario/odin-editor.git
-   cd odin-editor
+1. llevate el archivo .py
