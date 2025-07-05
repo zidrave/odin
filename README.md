@@ -1,24 +1,41 @@
-# odin
-EDITOR DE TEXTO PARA LINUX Inspirado en nano y vi!
+# Odin Editor ✍️
 
-Odin es un editor hecho en python3 
-responde a comandos de texto similar a vim
+**Editor de texto para Linux** inspirado en la simplicidad de `nano` y la potencia de `vi/vim`, desarrollado en Python 3.
 
-ESC 
-:w  = guardar y seguir editando
-:q  = salir sin guardar
-:wq = guardar y salir
-:wf:nombrefile = guardar copia en otro archivo
+![Odin Demo](https://via.placeholder.com/800x400?text=Odin+Editor+Demo) *(Reemplaza con un GIF real luego)*
 
-si se te malogra la tecla ESC el alias del comando texto seria 
-ALT + C
-y otras comandos
-ALT + l = ver / ocultar numeracion de lineas
-ALT + S = guardar archivo actual
-ALT + q = Salir sin guardar
-ALT + m = Seleccionar texto y para volver a deseleccionar vuelves a apretar ALT+m
-una ves seleccionado puedes enviar comandos de texto:
-:copy = copiar texto seleccionado
-:pegar = pegar
-:cortar = cortar
+## 🚀 Características
+- **Modo comando** estilo Vim.
+- **Atajos intuitivos** con `ESC` o `ALT`.
+- **Operaciones básicas**: Guardar, copiar, pegar, selección de texto.
+- **Ligero** y sin dependencias complejas.
 
+## ⌨️ Comandos
+### 🔧 **Modo Comando (Presiona `ESC` o `ALT + C`)**
+| Comando     | Acción                          |
+|-------------|---------------------------------|
+| `:w`        | Guardar y seguir editando.      |
+| `:q`        | Salir sin guardar.              |
+| `:wq`       | Guardar y salir.                |
+| `:wf:nombre`| Guardar copia en otro archivo.  |
+
+### 🎯 **Atajos Rápidos (Sin modo comando)**
+| Atajo       | Acción                          |
+|-------------|---------------------------------|
+| `ALT + L`   | Mostrar/ocultar números de línea. |
+| `ALT + S`   | Guardar archivo actual.         |
+| `ALT + Q`   | Salir sin guardar.              |
+| `ALT + M`   | Seleccionar texto (toggle).     |
+
+### ✂️ **Comandos sobre texto seleccionado**
+| Comando     | Acción                          |
+|-------------|---------------------------------|
+| `:copy`     | Copiar texto seleccionado.      |
+| `:pegar`    | Pegar texto.                    |
+| `:cortar`   | Cortar texto.                   |
+
+## 📥 Instalación
+1. Clona el repositorio:
+   ```bash
+   git clone https://github.com/tuusuario/odin-editor.git
+   cd odin-editor
