@@ -109,6 +109,12 @@ def editor(stdscr, archivo_inicial=None):
     sel_fin = None
     portapapeles = ''
 
+    def mostrar_mensaje_func(msg, color=curses.color_pair(6)):
+        nonlocal mostrar_mensaje, mostrar_mensaje_color, mostrar_mensaje_tiempo
+        mostrar_mensaje = msg
+        mostrar_mensaje_color = color
+        mostrar_mensaje_tiempo = time.time()
+
     # Cargar archivo si existe
     if archivo and os.path.exists(archivo):
         try:
@@ -122,15 +128,7 @@ def editor(stdscr, archivo_inicial=None):
                     lineas = ['']
         except Exception as e:
             lineas = ['']
-            mostrar_mensaje = f"Error al cargar archivo: {str(e)}"
-            mostrar_mensaje_color = curses.color_pair(5)
-            mostrar_mensaje_tiempo = time.time()
-
-    def mostrar_mensaje_func(msg, color=curses.color_pair(6)):
-        nonlocal mostrar_mensaje, mostrar_mensaje_color, mostrar_mensaje_tiempo
-        mostrar_mensaje = msg
-        mostrar_mensaje_color = color
-        mostrar_mensaje_tiempo = time.time()
+            mostrar_mensaje_func(f"Error al cargar archivo: {str(e)}", curses.color_pair(5))
 
     def validar_cursor():
         nonlocal cursor_x, cursor_y
@@ -238,10 +236,17 @@ def editor(stdscr, archivo_inicial=None):
             stdscr.clrtoeol()
             stdscr.attroff(curses.color_pair(3))
         else:
-            # Mostrar posición del cursor
-            info = f"Línea: {cursor_y + 1}, Col: {cursor_x + 1}"
-            stdscr.addstr(h - 1, 0, info[:w - 1])
-            stdscr.clrtoeol()
+            # Limpiar mensaje después de 2 segundos
+            if mostrar_mensaje and time.time() - mostrar_mensaje_tiempo >= 2.0:
+                mostrar_mensaje = ''
+            
+            # Mostrar posición del cursor solo si no hay mensaje activo
+            if not mostrar_mensaje:
+                info = f"Línea: {cursor_y + 1}, Col: {cursor_x + 1}"
+                stdscr.addstr(h - 1, 0, info[:w - 1])
+                stdscr.clrtoeol()
+            else:
+                stdscr.clrtoeol()
 
         # Posicionar cursor
         if not modo_comando and offset_y <= cursor_y < offset_y + h - 2:
