@@ -1,5 +1,7 @@
 # odin
-odin es un editor hecho en python3 
+EDITOR DE TEXTO PARA LINUX Inspirado en nano y vi!
+
+Odin es un editor hecho en python3 
 responde a comandos de texto similar a vim
 
 ESC 
