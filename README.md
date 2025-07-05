@@ -6,12 +6,12 @@
 
 ## 🚀 Características
 - **Modo comando** estilo Vim.
-- **Atajos intuitivos** con `ESC` o `ALT+e`.
+- **Atajos intuitivos** con `ESC` o `ALT`.
 - **Operaciones básicas**: Guardar, copiar, pegar, selección de texto.
 - **Ligero** y sin dependencias complejas.
 
 ## ⌨️ Comandos
-### 🔧 **Modo Comando (Presiona `ESC` o `ALT + C`)**
+### 🔧 **Modo Comando (Presiona `ESC` o `ALT + e`)**
 | Comando     | Acción                          |
 |-------------|---------------------------------|
 | `:w`        | Guardar y seguir editando.      |
