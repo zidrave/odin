@@ -1,3 +1,4 @@
+#version mejorada 1.0
 import curses
 import sys
 import os
@@ -11,13 +12,15 @@ def guardar_archivo(lineas, nombre):
 
 def pedir_nombre_archivo(stdscr):
     curses.echo()
-    stdscr.addstr(curses.LINES - 1, 0, "filename to save: ")
+    prompt = "filename to save: "
+    prompt_x = len(prompt)
+    stdscr.addstr(curses.LINES - 1, 0, prompt)
     stdscr.clrtoeol()
     nombre = ''
     pos = 0
     while True:
         key = stdscr.getch()
-        if key in (10, 13):  # Enter
+        if key in (10, 13):
             break
         elif key in (8, 127, curses.KEY_BACKSPACE):
             if pos > 0:
@@ -29,17 +32,21 @@ def pedir_nombre_archivo(stdscr):
         elif key == curses.KEY_RIGHT:
             if pos < len(nombre):
                 pos += 1
+        elif key == curses.KEY_HOME:
+            pos = 0
+        elif key == curses.KEY_END:
+            pos = len(nombre)
         elif 32 <= key <= 126:
             nombre = nombre[:pos] + chr(key) + nombre[pos:]
             pos += 1
 
-        maxw = curses.COLS - 35
+        maxw = curses.COLS - prompt_x - 1
         start = max(0, pos - maxw + 1)
         visible = nombre[start:start + maxw]
 
-        stdscr.addstr(curses.LINES - 1, 34, ' ' * maxw)
-        stdscr.addstr(curses.LINES - 1, 34, visible)
-        stdscr.move(curses.LINES - 1, 34 + min(pos - start, maxw - 1))
+        stdscr.addstr(curses.LINES - 1, prompt_x, ' ' * maxw)
+        stdscr.addstr(curses.LINES - 1, prompt_x, visible)
+        stdscr.move(curses.LINES - 1, prompt_x + min(pos - start, maxw - 1))
 
     curses.noecho()
     return nombre
@@ -47,7 +54,6 @@ def pedir_nombre_archivo(stdscr):
 def editor(stdscr, archivo_inicial=None):
     curses.start_color()
     curses.use_default_colors()
-
     curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_RED)
     curses.init_pair(2, curses.COLOR_YELLOW, -1)
     curses.init_pair(3, curses.COLOR_CYAN, -1)
@@ -134,14 +140,19 @@ def editor(stdscr, archivo_inicial=None):
         elif cursor_x >= scroll_x + (w - (4 if mostrar_lineas else 0) - 1):
             scroll_x = cursor_x - (w - (4 if mostrar_lineas else 0) - 2)
 
+        if cursor_y < offset_y:
+            offset_y = cursor_y
+        elif cursor_y >= offset_y + h - 2:
+            offset_y = cursor_y - (h - 3)
+
         if mostrar_mensaje and time.time() - mostrar_mensaje_tiempo < 1.5:
             stdscr.attron(mostrar_mensaje_color)
-            stdscr.addstr(h - 1, 0, mostrar_mensaje[:w-1])
+            stdscr.addstr(h - 1, 0, mostrar_mensaje[:w - 1])
             stdscr.clrtoeol()
             stdscr.attroff(mostrar_mensaje_color)
         elif modo_comando:
             stdscr.attron(curses.color_pair(3))
-            stdscr.addstr(h - 1, 0, f":{comando}"[:w-1])
+            stdscr.addstr(h - 1, 0, f":{comando}"[:w - 1])
             stdscr.clrtoeol()
             stdscr.attroff(curses.color_pair(3))
         else:
@@ -152,12 +163,14 @@ def editor(stdscr, archivo_inicial=None):
         stdscr.refresh()
         key = stdscr.getch()
 
+        if seleccionando:
+            sel_fin = (cursor_y, cursor_x)
+
         if key == 27:
             stdscr.nodelay(True)
             siguiente = stdscr.getch()
             stdscr.nodelay(False)
-
-            if siguiente == -1:
+            if siguiente == -1 or siguiente == ord('e'):
                 modo_comando = not modo_comando
                 comando = ''
                 continue
@@ -168,9 +181,6 @@ def editor(stdscr, archivo_inicial=None):
                     seleccionando = True
                 else:
                     seleccionando = False
-                continue
-            elif siguiente == ord('a'):
-                scroll_x = max(0, cursor_x - (w - (4 if mostrar_lineas else 0)) // 2)
                 continue
             elif siguiente == ord('s'):
                 if not archivo:
@@ -183,88 +193,85 @@ def editor(stdscr, archivo_inicial=None):
             elif siguiente == ord('q'):
                 break
             elif siguiente == ord('c'):
-                modo_comando = not modo_comando
-                comando = ''
+                if seleccionando and sel_inicio and sel_fin:
+                    sy, sx = sel_inicio
+                    ey, ex = sel_fin
+                    if (sy, sx) > (ey, ex):
+                        sy, sx, ey, ex = ey, ex, sy, sx
+                    if sy == ey:
+                        portapapeles = lineas[sy][sx:ex]
+                    else:
+                        portapapeles = '\n'.join([
+                            lineas[sy][sx:]
+                        ] + lineas[sy + 1:ey] + [lineas[ey][:ex]])
+                    mostrar_mensaje = "Texto copiado"
+                    mostrar_mensaje_color = curses.color_pair(6)
+                    mostrar_mensaje_tiempo = time.time()
                 continue
-            else:
-                key = siguiente
+            elif siguiente == ord('x'):
+                if seleccionando and sel_inicio and sel_fin:
+                    sy, sx = sel_inicio
+                    ey, ex = sel_fin
+                    if (sy, sx) > (ey, ex):
+                        sy, sx, ey, ex = ey, ex, sy, sx
+                    if sy == ey:
+                        portapapeles = lineas[sy][sx:ex]
+                        lineas[sy] = lineas[sy][:sx] + lineas[sy][ex:]
+                    else:
+                        portapapeles = '\n'.join([
+                            lineas[sy][sx:]
+                        ] + lineas[sy + 1:ey] + [lineas[ey][:ex]])
+                        lineas[sy] = lineas[sy][:sx] + lineas[ey][ex:]
+                        del lineas[sy + 1:ey + 1]
+                    seleccionando = False
+                    mostrar_mensaje = "Texto cortado"
+                    mostrar_mensaje_color = curses.color_pair(6)
+                    mostrar_mensaje_tiempo = time.time()
+                continue
+            elif siguiente == ord('v'):
+                if portapapeles:
+                    partes = portapapeles.split('\n')
+                    if len(partes) == 1:
+                        lineas[cursor_y] = lineas[cursor_y][:cursor_x] + partes[0] + lineas[cursor_y][cursor_x:]
+                        cursor_x += len(partes[0])
+                    else:
+                        inicio = lineas[cursor_y][:cursor_x] + partes[0]
+                        fin = partes[-1] + lineas[cursor_y][cursor_x:]
+                        lineas[cursor_y] = inicio
+                        for i in range(1, len(partes) - 1):
+                            lineas.insert(cursor_y + i, partes[i])
+                        lineas.insert(cursor_y + len(partes) - 1, fin)
+                        cursor_y += len(partes) - 1
+                        cursor_x = len(partes[-1])
+                    mostrar_mensaje = "Texto pegado"
+                    mostrar_mensaje_color = curses.color_pair(6)
+                    mostrar_mensaje_tiempo = time.time()
+                continue
 
         if modo_comando:
             if key in (10, 13):
                 comando_input = comando.strip()
-                if comando_input == 'w':
-                    if not archivo:
-                        archivo = pedir_nombre_archivo(stdscr)
-                    guardar_archivo(lineas, archivo)
+                if comando_input == 'q':
+                    break
+                elif comando_input == 'l':
+                    mostrar_lineas = not mostrar_lineas
+                elif comando_input == 'w':
+                    nombre_guardar = archivo or pedir_nombre_archivo(stdscr)
+                    guardar_archivo(lineas, nombre_guardar)
+                    archivo = nombre_guardar
                     mostrar_mensaje = f"Archivo guardado en {archivo}"
                     mostrar_mensaje_color = curses.color_pair(6)
                     mostrar_mensaje_tiempo = time.time()
-                elif comando_input == 'l':
-                    mostrar_lineas = not mostrar_lineas
+                elif comando_input == 'wq':
+                    nombre_guardar = archivo or pedir_nombre_archivo(stdscr)
+                    guardar_archivo(lineas, nombre_guardar)
+                    archivo = nombre_guardar
+                    break
                 elif comando_input.startswith('wf:'):
                     nuevo_nombre = comando_input[3:].strip()
                     if nuevo_nombre:
                         guardar_archivo(lineas, nuevo_nombre)
                         mostrar_mensaje = f"Copia guardada como {nuevo_nombre}"
-                        mostrar_mensaje_color = curses.color_pair(6)
-                        mostrar_mensaje_tiempo = time.time()
-                elif comando_input == 'q':
-                    break
-                elif comando_input == 'wq':
-                    if not archivo:
-                        archivo = pedir_nombre_archivo(stdscr)
-                    guardar_archivo(lineas, archivo)
-                    break
-                elif comando_input == 'copy':
-                    if seleccionando and sel_inicio and sel_fin:
-                        sy, sx = sel_inicio
-                        ey, ex = sel_fin
-                        if (sy, sx) > (ey, ex):
-                            sy, sx, ey, ex = ey, ex, sy, sx
-                        if sy == ey:
-                            portapapeles = lineas[sy][sx:ex]
-                        else:
-                            portapapeles = '\n'.join([
-                                lineas[sy][sx:]
-                            ] + lineas[sy + 1:ey] + [lineas[ey][:ex]])
-                        mostrar_mensaje = "Texto copiado"
-                        mostrar_mensaje_color = curses.color_pair(6)
-                        mostrar_mensaje_tiempo = time.time()
-                elif comando_input == 'cortar':
-                    if seleccionando and sel_inicio and sel_fin:
-                        sy, sx = sel_inicio
-                        ey, ex = sel_fin
-                        if (sy, sx) > (ey, ex):
-                            sy, sx, ey, ex = ey, ex, sy, sx
-                        if sy == ey:
-                            portapapeles = lineas[sy][sx:ex]
-                            lineas[sy] = lineas[sy][:sx] + lineas[sy][ex:]
-                        else:
-                            portapapeles = '\n'.join([
-                                lineas[sy][sx:]
-                            ] + lineas[sy + 1:ey] + [lineas[ey][:ex]])
-                            lineas[sy] = lineas[sy][:sx] + lineas[ey][ex:]
-                            del lineas[sy + 1:ey + 1]
-                        seleccionando = False
-                        mostrar_mensaje = "Texto cortado"
-                        mostrar_mensaje_color = curses.color_pair(6)
-                        mostrar_mensaje_tiempo = time.time()
-                elif comando_input == 'pegar':
-                    if portapapeles:
-                        partes = portapapeles.split('\n')
-                        if len(partes) == 1:
-                            lineas[cursor_y] = lineas[cursor_y][:cursor_x] + partes[0] + lineas[cursor_y][cursor_x:]
-                            cursor_x += len(partes[0])
-                        else:
-                            inicio = lineas[cursor_y][:cursor_x] + partes[0]
-                            fin = partes[-1] + lineas[cursor_y][cursor_x:]
-                            lineas[cursor_y] = inicio
-                            for i in range(1, len(partes) - 1):
-                                lineas.insert(cursor_y + i, partes[i])
-                            lineas.insert(cursor_y + len(partes) - 1, fin)
-                            cursor_y += len(partes) - 1
-                            cursor_x = len(partes[-1])
-                        mostrar_mensaje = "Texto pegado"
                         mostrar_mensaje_color = curses.color_pair(6)
                         mostrar_mensaje_tiempo = time.time()
                 comando = ''
@@ -274,40 +281,27 @@ def editor(stdscr, archivo_inicial=None):
             elif 32 <= key <= 126:
                 comando += chr(key)
         else:
-            if seleccionando:
-                sel_fin = (cursor_y, cursor_x)
-
-            if key == curses.KEY_HOME:
-                cursor_x = 0
-            elif key == curses.KEY_END:
-                cursor_x = len(lineas[cursor_y])
-            elif key == curses.KEY_PPAGE:
-                cursor_y = max(cursor_y - (h - 3), 0)
-            elif key == curses.KEY_NPAGE:
-                cursor_y = min(cursor_y + (h - 3), len(lineas) - 1)
-            elif key == curses.KEY_IC:
-                modo_insertar = not modo_insertar
+            if key == curses.KEY_UP:
+                if cursor_y > 0:
+                    cursor_y -= 1
+                    cursor_x = min(cursor_x, len(lineas[cursor_y]))
+            elif key == curses.KEY_DOWN:
+                if cursor_y < len(lineas) - 1:
+                    cursor_y += 1
+                    cursor_x = min(cursor_x, len(lineas[cursor_y]))
             elif key == curses.KEY_LEFT:
                 if cursor_x > 0:
                     cursor_x -= 1
             elif key == curses.KEY_RIGHT:
                 if cursor_x < len(lineas[cursor_y]):
                     cursor_x += 1
-            elif key == curses.KEY_UP:
-                if cursor_y > 0:
-                    cursor_y -= 1
-                    cursor_x = min(cursor_x, len(lineas[cursor_y]))
-            elif key == curses.KEY_DOWN:
-                if cursor_y + 1 < len(lineas):
-                    cursor_y += 1
-                    cursor_x = min(cursor_x, len(lineas[cursor_y]))
             elif key == 10:
                 nueva = lineas[cursor_y][cursor_x:]
                 lineas[cursor_y] = lineas[cursor_y][:cursor_x]
                 lineas.insert(cursor_y + 1, nueva)
                 cursor_y += 1
                 cursor_x = 0
-            elif key in (curses.KEY_BACKSPACE, 127):
+            elif key in (127, curses.KEY_BACKSPACE):
                 if cursor_x > 0:
                     lineas[cursor_y] = lineas[cursor_y][:cursor_x - 1] + lineas[cursor_y][cursor_x:]
                     cursor_x -= 1
@@ -318,19 +312,8 @@ def editor(stdscr, archivo_inicial=None):
                     cursor_y -= 1
                     cursor_x = prev_len
             elif 32 <= key <= 126:
-                if modo_insertar or cursor_x >= len(lineas[cursor_y]):
-                    lineas[cursor_y] = lineas[cursor_y][:cursor_x] + chr(key) + lineas[cursor_y][cursor_x:]
-                else:
-                    lineas[cursor_y] = lineas[cursor_y][:cursor_x] + chr(key) + lineas[cursor_y][cursor_x + 1:]
+                lineas[cursor_y] = lineas[cursor_y][:cursor_x] + chr(key) + lineas[cursor_y][cursor_x:]
                 cursor_x += 1
-
-            if cursor_y >= len(lineas):
-                lineas.append("")
-
-            if cursor_y < offset_y:
-                offset_y = cursor_y
-            elif cursor_y >= offset_y + h - 2:
-                offset_y = cursor_y - (h - 3)
 
 def main():
     os.environ.setdefault('ESCDELAY', '25')
@@ -344,3 +327,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+#eof
