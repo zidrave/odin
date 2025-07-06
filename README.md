@@ -15,6 +15,7 @@
 | Comando     | Acción                          |
 |-------------|---------------------------------|
 | `:w`        | Guardar y seguir editando.      |
+| `:l`        | Mostrar/ocultar números de línea.|
 | `:q`        | Salir sin guardar.              |
 | `:wq`       | Guardar y salir.                |
 | `:wf:nombre`| Guardar copia en otro archivo.  |
@@ -22,7 +23,6 @@
 ### 🎯 **Atajos Rápidos (Sin modo comando)**
 | Atajo       | Acción                          |
 |-------------|---------------------------------|
-| `ALT + L`   | Mostrar/ocultar números de línea. |
 | `ALT + S`   | Guardar archivo actual.         |
 | `ALT + Q`   | Salir sin guardar.              |
 | `ALT + M`   | Seleccionar texto (toggle).     |
