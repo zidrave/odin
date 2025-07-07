@@ -1,4 +1,4 @@
-# Odin Editor ✍️
+# (Odin) TEXT Editor para Consola Linux ✍️
 
 **Editor de texto para Linux** inspirado en la simplicidad de `nano` y la potencia de `vi/vim`, desarrollado en Python 3.
 
